@@ -1,0 +1,46 @@
+name: ロング動画作成・投稿
+
+on:
+  workflow_dispatch: # 手動実行
+  schedule:
+    - cron: "0 22 * * *" # 毎日 JST 07:00（朝）
+    - cron: "0 3 * * *"  # 毎日 JST 12:00（昼）
+    - cron: "0 13 * * *" # 毎日 JST 22:00（夜）
+
+jobs:
+  create-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: ffmpeg インストール
+        run: sudo apt-get install -y ffmpeg
+
+      - name: 依存関係インストール
+        run: npm ci
+
+      - name: ロング動画作成・投稿
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_OAUTH_TOKEN_JSON: ${{ secrets.YOUTUBE_OAUTH_TOKEN_JSON }}
+        run: npm run create-long
+
+      - name: 成果物を保存（デバッグ用）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-${{ github.run_id }}
+          path: output/
+          retention-days: 3
