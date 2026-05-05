@@ -3,13 +3,10 @@ import { OAuth2Client } from "google-auth-library";
 import fs from "fs";
 import path from "path";
 import http from "http";
-import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 const TOKEN_PATH = path.join(process.cwd(), "config", "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "config", "credentials.json");
+const REDIRECT_URI = "http://localhost:3000";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/youtube.upload",
@@ -34,7 +31,7 @@ export class GoogleAuth {
       throw new Error("YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET が未設定です");
     }
 
-    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, "http://localhost:3000");
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, REDIRECT_URI);
 
     oauth2Client.on("tokens", (tokens) => {
       if (fs.existsSync(TOKEN_PATH)) {
@@ -77,15 +74,20 @@ export class GoogleAuth {
     const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));
     const { client_id, client_secret } = credentials.installed ?? credentials.web;
 
-    const oauth2Client = new google.auth.OAuth2(client_id, client_secret, "http://localhost:3000");
+    const oauth2Client = new google.auth.OAuth2(client_id, client_secret, REDIRECT_URI);
 
-    const authUrl = oauth2Client.generateAuthUrl({ access_type: "offline", scope: SCOPES });
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: SCOPES,
+      prompt: "consent",
+    });
 
+    // サーバーを先に起動してから URL を表示する
     const token = await new Promise<object>((resolve, reject) => {
       const server = http.createServer(async (req, res) => {
-        if (!req.url?.startsWith("/?code=")) return;
+        if (!req.url?.includes("code=")) return;
 
-        const code = new URL(req.url, "http://localhost:3000").searchParams.get("code");
+        const code = new URL(req.url, REDIRECT_URI).searchParams.get("code");
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end("<h1>✅ 認証成功！このウィンドウを閉じてください。</h1>");
 
@@ -97,18 +99,22 @@ export class GoogleAuth {
           server.close();
           reject(e);
         }
-      }).listen(3000, async () => {
-        console.log("📝 ブラウザで認証してください:");
-        console.log(authUrl);
-        try { await execAsync(`open "${authUrl}"`); } catch { /* no-op */ }
       });
 
-      setTimeout(() => { server.close(); reject(new Error("認証タイムアウト")); }, 5 * 60 * 1000);
+      server.listen(3000, () => {
+        console.log("✅ ローカルサーバー起動済み (port 3000)");
+        console.log("\n📝 以下のURLをブラウザで開いて認証してください:");
+        console.log(authUrl);
+        console.log("\nブラウザで認証後、自動的にトークンが取得されます...");
+      });
+
+      setTimeout(() => { server.close(); reject(new Error("認証タイムアウト（5分）")); }, 5 * 60 * 1000);
     });
 
     fs.mkdirSync(path.dirname(TOKEN_PATH), { recursive: true });
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
-    console.log(`✅ token.json を保存しました: ${TOKEN_PATH}`);
-    console.log("👉 この内容を GitHub Secrets の YOUTUBE_OAUTH_TOKEN_JSON に登録してください");
+    console.log(`\n✅ token.json を保存しました: ${TOKEN_PATH}`);
+    console.log("👉 この内容を GitHub Secrets の YOUTUBE_OAUTH_TOKEN_JSON に登録してください:");
+    console.log(JSON.stringify(token));
   }
 }

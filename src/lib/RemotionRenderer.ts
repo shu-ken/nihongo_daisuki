@@ -18,21 +18,26 @@ export class RemotionRenderer {
   render(questions: Question[], outputVideoPath: string): void {
     fs.mkdirSync(path.dirname(outputVideoPath), { recursive: true });
 
-    const props = JSON.stringify({
+    // シェルのクォート問題を避けるためpropsをファイル経由で渡す
+    const propsPath = path.join(this.config.projectRoot, "output", "props.json");
+    fs.mkdirSync(path.dirname(propsPath), { recursive: true });
+    fs.writeFileSync(propsPath, JSON.stringify({
       questionIds: questions.map((q) => q.id),
       questions,
-    });
+    }));
 
     const cmd = [
       "npx remotion render",
       `"${this.config.remotionEntry}"`,
       this.config.compositionId,
       `"${outputVideoPath}"`,
-      `--props='${props}'`,
+      `--props="${propsPath}"`,
       `--config="${path.join(this.config.projectRoot, "remotion.config.ts")}"`,
     ].join(" ");
 
     execSync(cmd, { stdio: "inherit", cwd: this.config.projectRoot });
+
+    fs.unlinkSync(propsPath);
   }
 
   buildOutputPath(date: string, edition: string): string {
