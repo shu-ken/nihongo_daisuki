@@ -1,6 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Audio, Series } from "remotion";
-import { BackgroundLayer } from "shared/remotion";
+import { AbsoluteFill, Audio, Series, Img, staticFile } from "remotion";
 import { ExampleSlide } from "../slides/ExampleSlide";
 import { FPS, INTRO_DURATION_SEC, exampleSlideDurationFrames, wordSectionFrames } from "../lib/timing";
 import { QuestionData } from "../lib/fetchQuestion";
@@ -10,10 +9,17 @@ export type WordVideoProps = {
   questionIds: string[];
 };
 
+const Background: React.FC = () => (
+  <Img
+    src={staticFile("bg.png")}
+    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+  />
+);
+
 export const WordVideo: React.FC<WordVideoProps> = ({ questions }) => {
   return (
     <AbsoluteFill>
-      <BackgroundLayer episodePath="nihongo" defaultBgFile="bg.png" />
+      <Background />
 
       <Series>
         {questions.map((question) => (
