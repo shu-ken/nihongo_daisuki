@@ -16,6 +16,7 @@
     "@remotion/cli": "^4.0.457",
     "@remotion/layout-utils": "^4.0.457",
     "@supabase/supabase-js": "^2.100.1",
+    "ws": "^8.18.0",
     "dotenv": "^17.2.3",
     "googleapis": "^166.0.0",
     "react": "^19.2.5",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.25",
+    "@types/ws": "^8.5.14",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^5.3.2"

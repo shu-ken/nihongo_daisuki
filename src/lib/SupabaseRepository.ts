@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { execSync } from "child_process";
 import { Question, Example } from "../types";
+import ws from "ws";
 
 const SIGNED_URL_EXPIRES = 3600;
 
@@ -20,7 +21,9 @@ export class SupabaseRepository {
   private client: SupabaseClient;
 
   constructor(supabaseUrl: string, serviceRoleKey: string) {
-    this.client = createClient(supabaseUrl, serviceRoleKey);
+    this.client = createClient(supabaseUrl, serviceRoleKey, {
+      realtime: { transport: ws as any },
+    });
   }
 
   static fromEnv(): SupabaseRepository {
