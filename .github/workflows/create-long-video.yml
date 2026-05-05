@@ -22,7 +22,15 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      - name: ffmpeg キャッシュ
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: /usr/bin/ffmpeg
+          key: ffmpeg-${{ runner.os }}
+
       - name: ffmpeg インストール
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: sudo apt-get install -y ffmpeg
 
       - name: 依存関係インストール
