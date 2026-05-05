@@ -20,7 +20,7 @@ export class RemotionRenderer {
 
     const props = JSON.stringify({
       questionIds: questions.map((q) => q.id),
-      questions: [],
+      questions,
     });
 
     const cmd = [

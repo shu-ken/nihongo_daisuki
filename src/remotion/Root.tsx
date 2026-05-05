@@ -16,9 +16,13 @@ export const Root: React.FC = () => {
         questionIds: [] as string[],
       }}
       calculateMetadata={async ({ props }) => {
-        const questions = props.questionIds.length > 0
-          ? await fetchQuestions(props.questionIds)
-          : await fetchRandomQuestions(5);
+        // questionsが渡されていればそのまま使用（GitHub Actions環境）
+        // 渡されていなければSupabaseから取得（ローカルプレビュー用）
+        const questions = props.questions.length > 0
+          ? props.questions
+          : props.questionIds.length > 0
+            ? await fetchQuestions(props.questionIds)
+            : await fetchRandomQuestions(5);
         return {
           props: { ...props, questions },
           durationInFrames: wordVideoDurationInFrames(questions),
