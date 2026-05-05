@@ -1,0 +1,31 @@
+{
+  "name": "nihongo_daisuki",
+  "version": "1.0.0",
+  "description": "日本語大好き動画自動生成システム",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "create-long": "npm run build && node dist/main.js",
+    "reauth": "npm run build && node dist/auth/reauth.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@remotion/cli": "^4.0.457",
+    "@remotion/layout-utils": "^4.0.457",
+    "@supabase/supabase-js": "^2.100.1",
+    "dotenv": "^17.2.3",
+    "googleapis": "^166.0.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remotion": "^4.0.457"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.25",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.3.2"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+output/
+.env
+token.json
+*.tsbuildinfo
+
+# ローカルビルドキャッシュ
+.remotion/
