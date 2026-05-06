@@ -9,11 +9,12 @@ function getAudioDurationSec(url: string): number {
   try {
     const result = execSync(
       `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${url}"`,
-      { encoding: "utf8" }
+      { encoding: "utf8", timeout: 10000 }
     );
-    return parseFloat(result.trim());
+    const val = parseFloat(result.trim());
+    return isNaN(val) ? 0 : val;
   } catch {
-    return 3;
+    return 0; // 破損ファイルは0を返してスキップ対象にする
   }
 }
 
