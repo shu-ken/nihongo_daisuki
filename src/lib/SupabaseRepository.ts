@@ -3,7 +3,7 @@ import { execSync } from "child_process";
 import { Question, Example } from "../types";
 import ws from "ws";
 
-const SIGNED_URL_EXPIRES = 3600;
+const SIGNED_URL_EXPIRES = 21600; // 6時間（長時間レンダリングに対応）
 
 function getAudioDurationSec(url: string): number {
   try {
@@ -47,9 +47,30 @@ export class SupabaseRepository {
       const j = Math.floor(Math.random() * (i + 1));
       [ids[i], ids[j]] = [ids[j], ids[i]];
     }
-    const selected = ids.slice(0, count);
 
-    return Promise.all(selected.map((id: string) => this.fetchQuestion(id)));
+    // 音声が破損している問題をスキップしながら必要数を集める
+    const results: Question[] = [];
+    for (const id of ids) {
+      if (results.length >= count) break;
+      try {
+        const q = await this.fetchQuestion(id);
+        const hasValidAudio = q.wordAudioUrl &&
+          q.examples.every((ex) => ex.audioDurationEnSec > 0 && ex.audioDurationJaSec > 0);
+        if (hasValidAudio) {
+          results.push(q);
+        } else {
+          console.warn(`⚠️ 音声不正のためスキップ: ${q.jword} (${id})`);
+        }
+      } catch (e) {
+        console.warn(`⚠️ 取得失敗のためスキップ: ${id}`);
+      }
+    }
+
+    if (results.length < count) {
+      throw new Error(`有効な問題が${count}問見つかりませんでした（${results.length}問のみ取得）`);
+    }
+
+    return results;
   }
 
   async fetchQuestions(ids: string[]): Promise<Question[]> {
