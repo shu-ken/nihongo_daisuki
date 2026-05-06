@@ -3,6 +3,7 @@ import { OAuth2Client } from "google-auth-library";
 import fs from "fs";
 import path from "path";
 import http from "http";
+import readline from "readline";
 
 const TOKEN_PATH = path.join(process.cwd(), "config", "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "config", "credentials.json");
@@ -82,7 +83,7 @@ export class GoogleAuth {
       prompt: "consent",
     });
 
-    // サーバーを先に起動してから URL を表示する
+    // ローカルサーバーを起動しつつ、リダイレクト失敗時は手動入力も受け付ける
     const token = await new Promise<object>((resolve, reject) => {
       const server = http.createServer(async (req, res) => {
         if (!req.url?.includes("code=")) return;
@@ -105,10 +106,30 @@ export class GoogleAuth {
         console.log("✅ ローカルサーバー起動済み (port 3000)");
         console.log("\n📝 以下のURLをブラウザで開いて認証してください:");
         console.log(authUrl);
-        console.log("\nブラウザで認証後、自動的にトークンが取得されます...");
+        console.log("\n認証後にブラウザが localhost:3000 に自動リダイレクトされます。");
+        console.log("リダイレクトが失敗した場合は、ブラウザのアドレスバーのURLをここに貼り付けてEnterを押してください:");
+        console.log("（自動成功した場合は何も入力不要です）\n");
       });
 
-      setTimeout(() => { server.close(); reject(new Error("認証タイムアウト（5分）")); }, 5 * 60 * 1000);
+      // 手動入力のフォールバック
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.on("line", async (input) => {
+        const trimmed = input.trim();
+        if (!trimmed.includes("code=")) return;
+        try {
+          const code = new URL(trimmed).searchParams.get("code");
+          const { tokens } = await oauth2Client.getToken(code!);
+          rl.close();
+          server.close();
+          resolve(tokens);
+        } catch (e) {
+          rl.close();
+          server.close();
+          reject(e);
+        }
+      });
+
+      setTimeout(() => { server.close(); rl.close(); reject(new Error("認証タイムアウト（5分）")); }, 5 * 60 * 1000);
     });
 
     fs.mkdirSync(path.dirname(TOKEN_PATH), { recursive: true });
