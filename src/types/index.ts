@@ -68,4 +68,5 @@ export type UploadOptions = {
   tags: string[];
   privacyStatus: "public" | "unlisted" | "private";
   madeForKids: boolean;
+  publishAt?: string; // ISO 8601 UTC（公開予約）
 };

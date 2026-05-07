@@ -7,6 +7,7 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "create-long": "npm run build && node dist/main.js",
+    "create-shorts": "npm run build && node dist/main-shorts.js",
     "reauth": "npm run build && node dist/auth/reauth.js"
   },
   "keywords": [],

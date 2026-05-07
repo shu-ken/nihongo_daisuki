@@ -29,9 +29,10 @@ export class YouTubeUploader {
             categoryId: "27", // Education
           },
           status: {
-            privacyStatus: options.privacyStatus,
+            privacyStatus: options.publishAt ? "private" : options.privacyStatus,
             madeForKids: options.madeForKids,
             selfDeclaredMadeForKids: options.madeForKids,
+            publishAt: options.publishAt,
           },
         },
         media: {
