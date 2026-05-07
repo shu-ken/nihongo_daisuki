@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { YouTubeUploader } from "../lib/YouTubeUploader";
+import { SupabaseRepository } from "../lib/SupabaseRepository";
 import { VideoMetadata } from "../types";
 
 // ショートの公開予約オフセット（ロング公開時刻からの分）
@@ -25,10 +26,14 @@ function buildPublishAt(date: string, timeJST: string): string {
 }
 
 export class ShortVideoJob {
+  private repo: SupabaseRepository;
+
   constructor(
     private projectRoot: string,
     private uploader: YouTubeUploader
-  ) {}
+  ) {
+    this.repo = SupabaseRepository.fromEnv();
+  }
 
   async run(metadataPath: string): Promise<void> {
     console.log("📱 ショート動画ジョブ開始");
@@ -52,9 +57,11 @@ export class ShortVideoJob {
 
       console.log(`\n🎬 [${i + 1}/${questions.length}] ${q.jword} レンダリング中...`);
 
-      // propsをファイル経由で渡す
+      // question の詳細データを取得して props に含める（Remotion がSupabaseを呼ばないよう）
+      const question = await this.repo.fetchQuestion(q.id);
+
       const propsPath = path.join(this.projectRoot, "output", `props_short_${i}.json`);
-      fs.writeFileSync(propsPath, JSON.stringify({ question: null, questionId: q.id }));
+      fs.writeFileSync(propsPath, JSON.stringify({ question, questionId: q.id }));
 
       const cmd = [
         "npx remotion render",
