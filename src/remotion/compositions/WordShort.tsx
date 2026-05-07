@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Audio, Series, Img, staticFile } from "remotion";
-import { ExampleSlide } from "../slides/ExampleSlide";
+import { ExampleSlideShort } from "../slides/ExampleSlideShort";
 import { FPS, INTRO_DURATION_SEC, exampleSlideDurationFrames, wordSectionFrames } from "../lib/timing";
 import { QuestionData } from "../lib/fetchQuestion";
 
@@ -27,7 +27,7 @@ export const WordShort: React.FC<WordShortProps> = ({ question }) => {
         {/* 単語ヘッダー */}
         <div style={{
           position: "absolute",
-          top: 200,
+          top: 280,
           width: "100%",
           display: "flex",
           flexDirection: "column",
@@ -52,7 +52,7 @@ export const WordShort: React.FC<WordShortProps> = ({ question }) => {
               key={ex.id}
               durationInFrames={exampleSlideDurationFrames(ex.audioDurationEnSec, ex.audioDurationJaSec)}
             >
-              <ExampleSlide
+              <ExampleSlideShort
                 sortOrder={ex.sort_order}
                 en={ex.en}
                 ja={ex.ja}
