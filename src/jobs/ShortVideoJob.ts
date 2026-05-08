@@ -78,16 +78,33 @@ export class ShortVideoJob {
 
       // YouTube 投稿（公開予約）
       const longUrl = longVideoId ? `https://www.youtube.com/watch?v=${longVideoId}` : "";
+      const jlptLevel = question.jlpt_level ?? "";
+      const exampleLines = question.examples
+        .map((ex, idx) => `${idx + 1}. ${ex.ja} — ${ex.en}`)
+        .join("\n");
+      const hashTags = [q.jword, "LearnJapanese", "Shorts", "JapaneseVocabulary", "JLPT", "beginner"]
+        .map((t) => `#${t}`)
+        .join(" ");
       const description = [
-        `#Shorts #LearnJapanese #日本語`,
+        "#Shorts",
         "",
-        longUrl ? `▶️ フル動画はこちら: ${longUrl}` : "",
-      ].filter(Boolean).join("\n");
+        `Quick Japanese: Learn the word "${q.jword}" in context.`,
+        "",
+        "",
+        "Examples:",
+        exampleLines,
+        "",
+        longUrl ? `▶ Watch full lesson: ${longUrl}` : "",
+        "",
+        hashTags,
+      ].filter((line) => line !== undefined).join("\n");
+
+      const tags = ["Learn Japanese", jlptLevel, "Shorts", q.jword].filter(Boolean);
 
       const videoId = await this.uploader.upload(outputPath, {
-        title: `「${q.jword}」- Japanese Word of the Day #Shorts`,
+        title: `Learn Japanese Word for "${q.jword}" 🇯🇵 | 日本語学習 | JLPT`,
         description,
-        tags: ["Shorts", "LearnJapanese", "日本語", q.jword, q.yomi],
+        tags,
         privacyStatus: "private",
         madeForKids: false,
         publishAt,
