@@ -55,7 +55,7 @@ export class SupabaseRepository {
       if (results.length >= count) break;
       try {
         const q = await this.fetchQuestion(id);
-        const hasValidAudio = q.wordAudioUrl &&
+        const hasValidAudio = q.wordAudioDurationSec > 0 &&
           q.examples.every((ex) => ex.audioDurationEnSec > 0 && ex.audioDurationJaSec > 0);
         if (hasValidAudio) {
           results.push(q);
@@ -115,6 +115,9 @@ export class SupabaseRepository {
         .map((u) => [u.path as string, u.signedUrl as string])
     );
 
+    const wordAudioUrl = urlMap.get(`${questionId}/word_ja.wav`) ?? "";
+    const wordAudioDurationSec = getAudioDurationSec(wordAudioUrl);
+
     const examplesWithDuration: Example[] = examples.map((ex: { id: string; sort_order: number; en: string; ja: string; romaji: string }) => {
       const audioUrlEn = urlMap.get(`${questionId}/${ex.id}_en.wav`) ?? "";
       const audioUrlJa = urlMap.get(`${questionId}/${ex.id}_ja.wav`) ?? "";
@@ -129,7 +132,8 @@ export class SupabaseRepository {
 
     return {
       ...question,
-      wordAudioUrl: urlMap.get(`${questionId}/word_ja.wav`) ?? "",
+      wordAudioUrl,
+      wordAudioDurationSec,
       examples: examplesWithDuration,
     };
   }

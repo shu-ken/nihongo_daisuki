@@ -19,6 +19,7 @@ export type Question = {
   yomi_kana: string;
   jlpt_level: string | null;
   wordAudioUrl: string;
+  wordAudioDurationSec: number;
   examples: Example[];
 };
 
