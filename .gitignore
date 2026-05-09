@@ -7,3 +7,6 @@ token.json
 
 # ローカルビルドキャッシュ
 .remotion/
+.env.example
+credentials.json
+README.md
