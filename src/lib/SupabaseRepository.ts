@@ -7,8 +7,9 @@ const SIGNED_URL_EXPIRES = 21600; // 6時間（長時間レンダリングに対
 
 function getAudioDurationSec(url: string): number {
   try {
+    // -select_streams a:0 でRemotionと同じ音声ストリームレベルのチェックを行う
     const result = execSync(
-      `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${url}"`,
+      `ffprobe -v error -select_streams a:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${url}"`,
       { encoding: "utf8", timeout: 10000 }
     );
     const val = parseFloat(result.trim());
