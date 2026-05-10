@@ -18,14 +18,15 @@ const EDITION_SCHEDULE: Record<string, string[]> = {
 function buildPublishAt(date: string, timeJST: string): string {
   const [h, m] = timeJST.split(":").map(Number);
   const [year, month, day] = date.split("-").map(Number);
-  // 00:00〜05:59は翌日扱い
-  const targetDay = h < 6 ? day + 1 : day;
+  // Date.UTC + setUTCDate で月末越えを正しく処理（ローカルタイム非依存）
+  const d = new Date(Date.UTC(year, month - 1, day));
+  if (h < 6) d.setUTCDate(d.getUTCDate() + 1);
+  const y = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
   const hh = String(h).padStart(2, "0");
   const mm = String(m).padStart(2, "0");
-  const dd = String(targetDay).padStart(2, "0");
-  const mo = String(month).padStart(2, "0");
-  // JST文字列として構築（setHoursはローカルタイム依存なので使わない）
-  return new Date(`${year}-${mo}-${dd}T${hh}:${mm}:00+09:00`).toISOString();
+  return new Date(`${y}-${mo}-${dd}T${hh}:${mm}:00+09:00`).toISOString();
 }
 
 export class ShortVideoJob {

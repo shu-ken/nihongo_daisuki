@@ -27,8 +27,12 @@ function framesToTimestamp(frames: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+function nowJST(): Date {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000);
+}
+
 function getEdition(): "Morning" | "Afternoon" | "Evening" {
-  const hour = new Date().getHours();
+  const hour = nowJST().getUTCHours();
   if (hour < 12) return "Morning";
   if (hour < 18) return "Afternoon";
   return "Evening";
@@ -41,8 +45,9 @@ function formatDate(date: Date): string {
 export class MetadataBuilder {
   build(questions: Question[]): VideoMetadata {
     const now = new Date();
+    const nowJst = nowJST();
     const edition = getEdition();
-    const dateStr = formatDate(now);
+    const dateStr = formatDate(nowJst);
     const wordCount = questions.length;
     const exampleCount = questions.reduce((sum, q) => sum + q.examples.length, 0);
 
@@ -87,7 +92,7 @@ ${chapterLines}
 
     return {
       generatedAt: now.toISOString(),
-      date: now.toISOString().slice(0, 10),
+      date: nowJst.toISOString().slice(0, 10),
       edition,
       type: "long",
       questions: questions.map((q) => ({ id: q.id, jword: q.jword, yomi: q.yomi })),
