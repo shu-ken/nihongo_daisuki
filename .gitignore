@@ -10,3 +10,4 @@ token.json
 .env.example
 credentials.json
 README.md
+log/*

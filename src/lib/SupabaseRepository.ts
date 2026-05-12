@@ -7,7 +7,13 @@ const SIGNED_URL_EXPIRES = 21600; // 6時間（長時間レンダリングに対
 
 function getAudioDurationSec(url: string): number {
   try {
-    // -select_streams a:0 でRemotionと同じ音声ストリームレベルのチェックを行う
+    // stream=channels でRemotionと同じ音声ストリームの読み込み可否を確認する
+    const channels = execSync(
+      `ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=noprint_wrappers=1:nokey=1 "${url}"`,
+      { encoding: "utf8", timeout: 10000 }
+    ).trim();
+    if (!channels || isNaN(parseInt(channels))) return 0;
+    // チャンネル数が取れた場合のみ duration を取得する
     const result = execSync(
       `ffprobe -v error -select_streams a:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${url}"`,
       { encoding: "utf8", timeout: 10000 }
