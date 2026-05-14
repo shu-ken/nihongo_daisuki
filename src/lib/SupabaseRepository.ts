@@ -19,7 +19,13 @@ function getAudioDurationSec(url: string): number {
       { encoding: "utf8", timeout: 10000 }
     );
     const val = parseFloat(result.trim());
-    return isNaN(val) ? 0 : val;
+    if (isNaN(val) || val <= 0) return 0;
+    // 実際にデコードして破損データを検出する（ヘッダーは正常でも本体が壊れているケースに対応）
+    execSync(
+      `ffmpeg -v error -i "${url}" -f null -`,
+      { encoding: "utf8", timeout: 30000 }
+    );
+    return val;
   } catch {
     return 0; // 破損ファイルは0を返してスキップ対象にする
   }
