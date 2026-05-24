@@ -1,35 +1,50 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { execSync, spawnSync } from "child_process";
+import { tmpdir } from "os";
+import { join } from "path";
+import { unlinkSync, existsSync } from "fs";
 import { Question, Example } from "../types";
 import ws from "ws";
 
 const SIGNED_URL_EXPIRES = 21600; // 6時間（長時間レンダリングに対応）
 
 function getAudioDurationSec(url: string): number {
+  const tmpFile = join(tmpdir(), `audio-check-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`);
   try {
-    // stream=channels でRemotionと同じ音声ストリームの読み込み可否を確認する
-    const channels = execSync(
-      `ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=noprint_wrappers=1:nokey=1 "${url}"`,
-      { encoding: "utf8", timeout: 10000 }
-    ).trim();
-    if (!channels || isNaN(parseInt(channels))) return 0;
-    // チャンネル数が取れた場合のみ duration を取得する
-    const result = execSync(
-      `ffprobe -v error -select_streams a:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${url}"`,
-      { encoding: "utf8", timeout: 10000 }
-    );
-    const val = parseFloat(result.trim());
+    // ファイルをダウンロードしてからバリデーション（Remotionと同じ方式）
+    const dl = spawnSync("curl", ["-sSfL", "--max-time", "15", "-o", tmpFile, url], {
+      encoding: "utf8",
+      timeout: 20000,
+    });
+    if (dl.status !== 0) return 0;
+
+    const channels = spawnSync("ffprobe", [
+      "-v", "error", "-select_streams", "a:0",
+      "-show_entries", "stream=channels",
+      "-of", "default=noprint_wrappers=1:nokey=1", tmpFile,
+    ], { encoding: "utf8", timeout: 10000 });
+    if (channels.status !== 0 || !channels.stdout.trim() || isNaN(parseInt(channels.stdout.trim()))) return 0;
+
+    const dur = spawnSync("ffprobe", [
+      "-v", "error", "-select_streams", "a:0",
+      "-show_entries", "format=duration",
+      "-of", "default=noprint_wrappers=1:nokey=1", tmpFile,
+    ], { encoding: "utf8", timeout: 10000 });
+    const val = parseFloat(dur.stdout.trim());
     if (isNaN(val) || val <= 0) return 0;
-    // 実際にデコードして破損データを検出する（ヘッダーは正常でも本体が壊れているケースに対応）
-    // spawnSync で stderr も取得し、エラー出力があれば破損と判断する
-    const decode = spawnSync("ffmpeg", ["-v", "error", "-i", url, "-f", "null", "-"], {
+
+    // 実際にデコードして破損データを検出する
+    const decode = spawnSync("ffmpeg", ["-v", "error", "-i", tmpFile, "-f", "null", "-"], {
       encoding: "utf8",
       timeout: 30000,
     });
-    if (decode.status !== 0 || (decode.stderr && decode.stderr.trim().length > 0)) return 0;
+    if (decode.status !== 0 || decode.stderr.trim().length > 0) return 0;
+
     return val;
   } catch {
-    return 0; // 破損ファイルは0を返してスキップ対象にする
+    return 0;
+  } finally {
+    if (existsSync(tmpFile)) unlinkSync(tmpFile);
   }
 }
 
