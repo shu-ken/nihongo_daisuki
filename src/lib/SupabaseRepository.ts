@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import { Question, Example } from "../types";
 import ws from "ws";
 
@@ -21,10 +21,12 @@ function getAudioDurationSec(url: string): number {
     const val = parseFloat(result.trim());
     if (isNaN(val) || val <= 0) return 0;
     // 実際にデコードして破損データを検出する（ヘッダーは正常でも本体が壊れているケースに対応）
-    execSync(
-      `ffmpeg -v error -i "${url}" -f null -`,
-      { encoding: "utf8", timeout: 30000 }
-    );
+    // spawnSync で stderr も取得し、エラー出力があれば破損と判断する
+    const decode = spawnSync("ffmpeg", ["-v", "error", "-i", url, "-f", "null", "-"], {
+      encoding: "utf8",
+      timeout: 30000,
+    });
+    if (decode.status !== 0 || (decode.stderr && decode.stderr.trim().length > 0)) return 0;
     return val;
   } catch {
     return 0; // 破損ファイルは0を返してスキップ対象にする
@@ -74,6 +76,7 @@ export class SupabaseRepository {
           results.push(q);
         } else {
           console.warn(`⚠️ 音声不正のためスキップ: ${q.jword} (${id})`);
+          await this.resetAudioReview(id);
         }
       } catch (e) {
         console.warn(`⚠️ 取得失敗のためスキップ: ${id}`);
@@ -149,5 +152,17 @@ export class SupabaseRepository {
       wordAudioDurationSec,
       examples: examplesWithDuration,
     };
+  }
+
+  private async resetAudioReview(questionId: string): Promise<void> {
+    const { error } = await this.client
+      .from("questions")
+      .update({ ai_audio_review: false })
+      .eq("id", questionId);
+    if (error) {
+      console.warn(`⚠️ ai_audio_review リセット失敗 (${questionId}): ${error.message}`);
+    } else {
+      console.log(`🔄 ai_audio_review を false にリセット: ${questionId}`);
+    }
   }
 }
