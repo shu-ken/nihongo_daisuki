@@ -31,7 +31,9 @@ jobs:
 
       - name: ffmpeg・日本語フォント インストール
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: sudo apt-get install -y ffmpeg fonts-noto-cjk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
 
       - name: 依存関係インストール
         run: npm ci
