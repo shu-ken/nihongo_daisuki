@@ -27,7 +27,7 @@ jobs:
           FILENAME="${DATE}_${SLUG}_${RUN_ID}.txt"
 
           mkdir -p log
-          gh run view "$RUN_ID" --log > "log/$FILENAME" 2>&1
+          gh run view "$RUN_ID" --log > "log/$FILENAME" 2>&1 || true
           echo "FILENAME=$FILENAME" >> $GITHUB_ENV
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "WORKFLOW=$WORKFLOW" >> $GITHUB_ENV
