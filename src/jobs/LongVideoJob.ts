@@ -73,7 +73,7 @@ export class LongVideoJob {
     metadata.seo.chapters.forEach((c) => console.log(`     ${c.timestamp} - ${c.title}`));
     } catch (e) {
       console.error("❌ ジョブ失敗。選出済み問題の ai_audio_review をリセット中...");
-      await this.repo.resetAudioReviewBatch(questions.map((q) => q.id));
+      await this.repo.resetHumanReviewBatch(questions.map((q) => q.id));
       throw e;
     }
   }

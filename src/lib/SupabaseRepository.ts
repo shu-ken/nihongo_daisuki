@@ -109,7 +109,7 @@ export class SupabaseRepository {
           results.push(q);
         } else {
           console.warn(`⚠️ 音声不正のためスキップ: ${q.jword} (${id})`);
-          await this.resetAudioReview(id);
+          await this.resetHumanReview(id);
         }
       } catch (e) {
         console.warn(`⚠️ 取得失敗のためスキップ: ${id}`);
@@ -187,19 +187,19 @@ export class SupabaseRepository {
     };
   }
 
-  private async resetAudioReview(questionId: string): Promise<void> {
+  private async resetHumanReview(questionId: string): Promise<void> {
     const { error } = await this.client
       .from("questions")
-      .update({ ai_audio_review: false })
+      .update({ human_review: false })
       .eq("id", questionId);
     if (error) {
-      console.warn(`⚠️ ai_audio_review リセット失敗 (${questionId}): ${error.message}`);
+      console.warn(`⚠️ human_review リセット失敗 (${questionId}): ${error.message}`);
     } else {
-      console.log(`🔄 ai_audio_review を false にリセット: ${questionId}`);
+      console.log(`🔄 human_review を false にリセット: ${questionId}`);
     }
   }
 
-  async resetAudioReviewBatch(questionIds: string[]): Promise<void> {
-    await Promise.all(questionIds.map((id) => this.resetAudioReview(id)));
+  async resetHumanReviewBatch(questionIds: string[]): Promise<void> {
+    await Promise.all(questionIds.map((id) => this.resetHumanReview(id)));
   }
 }
