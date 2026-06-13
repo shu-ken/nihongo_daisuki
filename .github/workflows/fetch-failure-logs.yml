@@ -1,0 +1,37 @@
+name: 失敗ログ自動取得
+
+on:
+  workflow_run:
+    workflows:
+      - "ロング動画作成・投稿"
+      - "ショート動画作成・投稿"
+    types: [completed]
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    permissions:
+      actions: read
+
+    steps:
+      - name: ログを取得
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          WORKFLOW="${{ github.event.workflow_run.name }}"
+          DATE=$(date -u +%Y-%m-%d)
+          SLUG=$(echo "$WORKFLOW" | tr -cs '[:alnum:]' '-' | sed 's/^-*//;s/-*$//')
+          FILENAME="${DATE}_${SLUG}_${RUN_ID}.txt"
+
+          mkdir -p log
+          gh run view "$RUN_ID" --log > "log/$FILENAME" 2>&1
+          echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+
+      - name: ログをArtifactとして保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-log-${{ github.event.workflow_run.id }}
+          path: log/
+          retention-days: 30
