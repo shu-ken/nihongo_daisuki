@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { execSync, spawnSync } from "child_process";
-import { tmpdir } from "os";
+import { spawnSync } from "child_process";
+import { tmpdir, arch, platform } from "os";
 import { join } from "path";
 import { unlinkSync, existsSync } from "fs";
 import { Question, Example } from "../types";
@@ -8,37 +8,55 @@ import ws from "ws";
 
 const SIGNED_URL_EXPIRES = 21600; // 6時間（長時間レンダリングに対応）
 
+function getRemotionFfprobePath(): string {
+  const p = platform();
+  const a = arch();
+  let pkgName: string;
+  if (p === "linux") {
+    pkgName = a === "arm64"
+      ? "@remotion/compositor-linux-arm64-gnu"
+      : "@remotion/compositor-linux-x64-gnu";
+  } else if (p === "darwin") {
+    pkgName = a === "arm64"
+      ? "@remotion/compositor-darwin-arm64"
+      : "@remotion/compositor-darwin-x64";
+  } else {
+    return "ffprobe";
+  }
+  try {
+    // require.resolveでnode_modules内のパスを取得
+    const resolved = require.resolve(`${pkgName}/package.json`);
+    return join(resolved, "..", "ffprobe");
+  } catch {
+    return "ffprobe";
+  }
+}
+
+const REMOTION_FFPROBE = getRemotionFfprobePath();
+
 function getAudioDurationSec(url: string): number {
   const tmpFile = join(tmpdir(), `audio-check-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`);
   try {
-    // ファイルをダウンロードしてからバリデーション（Remotionと同じ方式）
     const dl = spawnSync("curl", ["-sSfL", "--max-time", "15", "-o", tmpFile, url], {
       encoding: "utf8",
       timeout: 20000,
     });
     if (dl.status !== 0) return 0;
 
-    const channels = spawnSync("ffprobe", [
-      "-v", "error", "-select_streams", "a:0",
-      "-show_entries", "stream=channels",
-      "-of", "default=noprint_wrappers=1:nokey=1", tmpFile,
+    // Remotionが実際に実行するのと同じバイナリ・同じフラグでバリデーション
+    const probe = spawnSync(REMOTION_FFPROBE, [
+      "-v", "error",
+      "-select_streams", "a:0",
+      "-show_entries", "stream=channels:stream=start_time:format=duration:format=format_name",
+      "-of", "default=nw=1",
+      tmpFile,
     ], { encoding: "utf8", timeout: 10000 });
-    if (channels.status !== 0 || !channels.stdout.trim() || isNaN(parseInt(channels.stdout.trim()))) return 0;
+    if (probe.status !== 0) return 0;
 
-    const dur = spawnSync("ffprobe", [
-      "-v", "error", "-select_streams", "a:0",
-      "-show_entries", "format=duration",
-      "-of", "default=noprint_wrappers=1:nokey=1", tmpFile,
-    ], { encoding: "utf8", timeout: 10000 });
-    const val = parseFloat(dur.stdout.trim());
+    const durationMatch = probe.stdout.match(/^duration=(.+)$/m);
+    if (!durationMatch) return 0;
+    const val = parseFloat(durationMatch[1]);
     if (isNaN(val) || val <= 0) return 0;
-
-    // 実際にデコードして破損データを検出する
-    const decode = spawnSync("ffmpeg", ["-v", "error", "-i", tmpFile, "-f", "null", "-"], {
-      encoding: "utf8",
-      timeout: 30000,
-    });
-    if (decode.status !== 0 || decode.stderr.trim().length > 0) return 0;
 
     return val;
   } catch {
