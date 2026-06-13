@@ -24,6 +24,7 @@ export class LongVideoJob {
     const questions = await this.repo.fetchRandomQuestions(QUESTION_COUNT);
     console.log(`✅ 選出: ${questions.map((q) => q.jword).join("・")}`);
 
+    try {
     // 2. メタデータ生成
     const metadata = this.metadataBuilder.build(questions);
     console.log(`📝 タイトル: ${metadata.seo.title}`);
@@ -70,5 +71,10 @@ export class LongVideoJob {
     console.log(`   タイトル: ${metadata.seo.title}`);
     console.log("   チャプター:");
     metadata.seo.chapters.forEach((c) => console.log(`     ${c.timestamp} - ${c.title}`));
+    } catch (e) {
+      console.error("❌ ジョブ失敗。選出済み問題の ai_audio_review をリセット中...");
+      await this.repo.resetAudioReviewBatch(questions.map((q) => q.id));
+      throw e;
+    }
   }
 }

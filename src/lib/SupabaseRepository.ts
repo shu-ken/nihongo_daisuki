@@ -198,4 +198,8 @@ export class SupabaseRepository {
       console.log(`🔄 ai_audio_review を false にリセット: ${questionId}`);
     }
   }
+
+  async resetAudioReviewBatch(questionIds: string[]): Promise<void> {
+    await Promise.all(questionIds.map((id) => this.resetAudioReview(id)));
+  }
 }
