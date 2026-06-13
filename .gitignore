@@ -11,4 +11,5 @@ token.json
 credentials.json
 README.md
 log/*
-reports/*
+reports/*tmp/
+logs/
