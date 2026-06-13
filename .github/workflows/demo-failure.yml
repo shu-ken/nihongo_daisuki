@@ -1,0 +1,13 @@
+name: デモ用失敗トリガー
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 意図的に失敗
+        run: |
+          echo "これはデモ用の失敗です"
+          exit 1

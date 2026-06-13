@@ -28,6 +28,8 @@ jobs:
           mkdir -p log
           gh run view "$RUN_ID" --log > "log/$FILENAME" 2>&1
           echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+          echo "WORKFLOW=$WORKFLOW" >> $GITHUB_ENV
 
       - name: ログをArtifactとして保存
         uses: actions/upload-artifact@v4
@@ -35,3 +37,8 @@ jobs:
           name: failure-log-${{ github.event.workflow_run.id }}
           path: log/
           retention-days: 30
+
+      - name: ntfy で Mac を起動
+        run: |
+          curl -s -d "GitHub Actions失敗: ${WORKFLOW} (run ${RUN_ID})" \
+            https://ntfy.sh/wol-abc123xyz789
