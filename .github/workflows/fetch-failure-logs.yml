@@ -5,6 +5,7 @@ on:
     workflows:
       - "ロング動画作成・投稿"
       - "ショート動画作成・投稿"
+      - "デモ用失敗トリガー"
     types: [completed]
 
 jobs:
