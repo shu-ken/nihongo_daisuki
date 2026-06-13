@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Question, Example } from '@/types/index'
 
@@ -470,9 +470,8 @@ export default function Home() {
                 questions.map(q => {
                   const isOpen = expandedId === q.id
                   return (
-                    <>
+                    <React.Fragment key={q.id}>
                       <tr
-                        key={q.id}
                         onClick={() => setExpandedId(isOpen ? null : q.id)}
                         className={`cursor-pointer transition-colors border-t border-gray-100 ${isOpen ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                       >
@@ -507,7 +506,7 @@ export default function Home() {
                           onQuestionUpdate={patch => updateQuestion(q.id, patch)}
                         />
                       )}
-                    </>
+                    </React.Fragment>
                   )
                 })
               )}
