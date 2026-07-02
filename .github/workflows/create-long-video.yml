@@ -3,9 +3,9 @@ name: ロング動画作成・投稿
 on:
   workflow_dispatch: # 手動実行
   schedule:
-    - cron: "0 22 * * *" # 毎日 JST 07:00（朝）
+    # - cron: "0 22 * * *" # 毎日 JST 07:00（朝）
     # - cron: "0 3 * * *"  # 毎日 JST 12:00（昼）
-    - cron: "0 13 * * *" # 毎日 JST 22:00（夜）
+    # - cron: "0 13 * * *" # 毎日 JST 22:00（夜）
 
 jobs:
   create-and-upload:
